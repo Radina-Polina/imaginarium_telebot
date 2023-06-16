@@ -11,10 +11,10 @@ number_of_person = {1: {"color": None, "point": 0},
 colors = []
 
 
-def keyboard(call):  # функция для создания клавиатуры с цветами
-    keyboard = types.InlineKeyboardMarkup()
+def keyboard(call, player):  # функция для создания клавиатуры с цветами
+    kbd = types.InlineKeyboardMarkup()
     for keys in colors:
-        keyboard.add(types.InlineKeyboardButton(text=keys, callback_data=keys))
+        kbd.add(types.InlineKeyboardButton(text=keys, callback_data=keys))
     # markup1 = types.InlineKeyboardButton(text="Красный", callback_data="Красный")
     # markup2 = types.InlineKeyboardButton(text="Зелёный", callback_data="Зелёный")
     # markup3 = types.InlineKeyboardButton(text="Синий", callback_data="Синий")
@@ -23,7 +23,7 @@ def keyboard(call):  # функция для создания клавиатур
     # markup6 = types.InlineKeyboardButton(text="Белый", callback_data="Белый")
     # markup7 = types.InlineKeyboardButton(text="Чёрный", callback_data="Чёрный")
     # keyboard.add(markup1, markup2, markup3, markup4, markup5, markup6, markup7)
-    bot.send_message(call.message.chat.id, "<b>Чёрный выбран автоматически</b>", reply_markup=keyboard,
+    bot.send_message(call.message.chat.id, f"Игрок {player} - выберите цвет", reply_markup=kbd,
                      parse_mode="html")
 
 
@@ -67,7 +67,7 @@ def calling_button(call):
                             3: {"color": None, "point": 0}}
         bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
                          reply_markup=kbd)
-        keyboard(call)
+
         count = 3
     elif call.data == "4":
         number_of_person = {1: {"color": None, "point": 0},
@@ -76,7 +76,7 @@ def calling_button(call):
                             4: {"color": None, "point": 0}}
         bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
                          reply_markup=kbd)
-        keyboard(call)
+
         count = 4
     elif call.data == "5":
         number_of_person = {1: {"color": None, "point": 0},
@@ -86,7 +86,6 @@ def calling_button(call):
                             5: {"color": None, "point": 0}}
         bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
                          reply_markup=kbd)
-        keyboard(call)
         count = 5
     elif call.data == "6":
         number_of_person = {1: {"color": None, "point": 0},
@@ -97,7 +96,6 @@ def calling_button(call):
                             6: {"color": None, "point": 0}}
         bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
                          reply_markup=kbd)
-        keyboard(call)
         count = 6
     elif call.data == "7":
         number_of_person = {1: {"color": None, "point": 0},
@@ -109,16 +107,19 @@ def calling_button(call):
                             7: {"color": None, "point": 0}}
         bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
                          reply_markup=kbd)
-        keyboard(call)
         count = 7
 
+    elif call.data == "Далее":
+        keyboard(call, "1")
 
-    elif call.data in colors and chetchik <= count:
+    elif (call.data in colors and chetchik <= count):
         number_of_person[chetchik]["color"] = call.data
         chetchik += 1
         colors.remove(call.data)
-        print(call.data)
-        print(chetchik)
+        if chetchik<= count:
+            keyboard(call, chetchik)
+            print(call.data)
+            print(chetchik)
     print(number_of_person)
 
 
