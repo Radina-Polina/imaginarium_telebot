@@ -1,18 +1,18 @@
 from start import bot
 from telebot import types
 
-count = 0
-chetchik = 1
-number_of_person = {1: {"color": None, "point": 0},
+count = 0  # переменная для кол-ва участников
+chetchik = 1  # переменная , используемая для создания клавиатуры
+number_of_person = {1: {"color": None, "point": 0},  # словарь с данными участников
                     2: {"color": None, "point": 0},
                     3: {"color": None, "point": 0}}
-colors = []
-game_ready = None
-now = 1
-prew_now = 1
-kbd2 = None
+colors = []  # список с цветами
+game_ready = None  # флаг на начало игры
+now = 1  # переменная для определения номера того, кто ходит
+prew_now = 1  # переменная, используемая для добавления очков
+kbd2 = None  # клавиатура вторая для счёта очков
 now_playing = None
-chetchik2 = 0
+chetchik2 = 0  # для передачи хода переменная
 
 
 def keyboard(call, player):  # функция для создания клавиатуры с цветами
@@ -53,8 +53,7 @@ def start(message):
 @bot.message_handler(content_types='text')
 def message_reply_numbers(message):  # функция для выбора кол-ва участников
     global number_of_person, colors, kbd, call, kbd2, now, now_playing
-    ck = 0
-    ygadavshie = []
+
     if message.text == "Имаджинариум":
         bot.send_message(chat_id=message.chat.id, text="Выбирай количество участников.")
         keyboard = types.InlineKeyboardMarkup(row_width=2)
@@ -71,64 +70,26 @@ def message_reply_numbers(message):  # функция для выбора кол
 
 
 @bot.callback_query_handler(func=lambda call: True)
-def calling_button(call):
+def calling_button(call):  # обработка кнопок
     global number_of_person, count, chetchik, colors, game_ready, kbd2, chetchik2, prew_now
 
     kbd = types.InlineKeyboardMarkup()
     kbd.add(types.InlineKeyboardButton(text="Далее", callback_data="Далее"))
 
-    if call.data == "3":
-        number_of_person = {1: {"color": None, "point": 0},
-                            2: {"color": None, "point": 0},
-                            3: {"color": None, "point": 0}}
+    if call.data in ['3', '4', '5', '6', '7']:  # создание словаря с цветами
+        count = int(call.data)
+
+        for i in range(count - 3):
+            number_of_person[count] = {"color": None, "point": 0}
         bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
                          reply_markup=kbd)
 
-        count = 3
-    elif call.data == "4":
-        number_of_person = {1: {"color": None, "point": 0},
-                            2: {"color": None, "point": 0},
-                            3: {"color": None, "point": 0},
-                            4: {"color": None, "point": 0}}
-        bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
-                         reply_markup=kbd)
 
-        count = 4
-    elif call.data == "5":
-        number_of_person = {1: {"color": None, "point": 0},
-                            2: {"color": None, "point": 0},
-                            3: {"color": None, "point": 0},
-                            4: {"color": None, "point": 0},
-                            5: {"color": None, "point": 0}}
-        bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
-                         reply_markup=kbd)
-        count = 5
-    elif call.data == "6":
-        number_of_person = {1: {"color": None, "point": 0},
-                            2: {"color": None, "point": 0},
-                            3: {"color": None, "point": 0},
-                            4: {"color": None, "point": 0},
-                            5: {"color": None, "point": 0},
-                            6: {"color": None, "point": 0}}
-        bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
-                         reply_markup=kbd)
-        count = 6
-    elif call.data == "7":
-        number_of_person = {1: {"color": None, "point": 0},
-                            2: {"color": None, "point": 0},
-                            3: {"color": None, "point": 0},
-                            4: {"color": None, "point": 0},
-                            5: {"color": None, "point": 0},
-                            6: {"color": None, "point": 0},
-                            7: {"color": None, "point": 0}}
-        bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
-                         reply_markup=kbd)
-        count = 7
 
-    elif call.data == "Далее":
+    elif call.data == "Далее":  # кнопка далее
         keyboard(call, "1")
 
-    elif call.data in colors and chetchik <= count:
+    elif call.data in colors and chetchik <= count:  # создание клавиатуры после кнопки далее, она меняется
         number_of_person[chetchik]["color"] = call.data
         chetchik += 1
         colors.remove(call.data)
@@ -142,94 +103,23 @@ def calling_button(call):
             kbd2 = types.InlineKeyboardMarkup()
             for key, value in number_of_person.items():
                 kbd2.add(types.InlineKeyboardButton(text=value["color"],
-                                                    callback_data=value["color"] + "!"))
+                                                    callback_data=str(value["color"]) + "!"))
             kbd2.add(types.InlineKeyboardButton(text="Передать ход",
                                                 callback_data='next'))
 
-    elif call.data == "Красный!" and call.data[:-1] != now_playing:
-        try:
-            for key, value in number_of_person.items():
-                if value["color"] == "Красный":
-                    value["point"] += 3
-                    chetchik2 += 1
-            print(number_of_person)
 
-        except:
-            raise Exception("ПЕРЕДЕЛЫВАЙ!")
-
-
-    elif call.data == "Оранжевый!" and call.data[:-1] != now_playing:
+    elif call.data in ["Красный!", "Оранжевый!", "Жёлтый!", "Зелёный!", "Синий!", "Белый!",
+                       "Чёрный!"]:  # если угадали + нажатие +3 балла
         try:
             for key, value in number_of_person.items():
-                if value["color"] == "Оранжевый":
+                if value["color"] == call.data[:-1] and call.data[:-1] != number_of_person[now - 1]['color']:
                     value["point"] += 3
                     chetchik2 += 1
             print(number_of_person)
         except:
             raise Exception("ПЕРЕДЕЛЫВАЙ!")
-    elif call.data == "Жёлтый!" and call.data[:-1] != now_playing:
-        try:
-            for key, value in number_of_person.items():
-                if value["color"] == "Жёлтый":
-                    value["point"] += 3
-                    chetchik2 += 1
-            print(number_of_person)
-        except:
-            raise Exception("ПЕРЕДЕЛЫВАЙ!")
-    elif call.data == "Зелёный!" and call.data[:-1] != now_playing:
-        try:
-            for key, value in number_of_person.items():
-                if value["color"] == "Зелёный":
-                    value["point"] += 3
-                    chetchik2 += 1
-            print(number_of_person)
-        except:
-            raise Exception("ПЕРЕДЕЛЫВАЙ!")
-    elif call.data == "Синий!" and call.data[:-1] != now_playing:
-        try:
-            for key, value in number_of_person.items():
-                if value["color"] == "Синий":
-                    value["point"] += 3
-                    chetchik2 += 1
-            print(number_of_person)
-        except:
-            raise Exception("ПЕРЕДЕЛЫВАЙ!")
-    elif call.data == "Белый!" and call.data[:-1] != now_playing:
-        try:
-            for key, value in number_of_person.items():
-                if value["color"] == "Белый":
-                    value["point"] += 3
-                    chetchik2 += 1
-            print(number_of_person)
-        except:
-            raise Exception("ПЕРЕДЕЛЫВАЙ!")
-    elif call.data == "Чёрный!" and call.data[:-1] != now_playing:
-        try:
-            for key, value in number_of_person.items():
-                if value["color"] == "Чёрный":
-                    value["point"] += 3
-                    chetchik2 += 1
-            print(number_of_person)
-        except:
-            raise Exception("ПЕРЕДЕЛЫВАЙ!")
-
     elif call.data == "next":
         if 0 < chetchik2 < count - 1:
             number_of_person[prew_now]["point"] += 3
         playing(call.message)
-        chetchik2=0
-
-
-"""
-    elif call.data == "Красный":
-        if chetchik<count:
-            number_of_person[chetchik]['color']="Красный"
-            print(number_of_person)
-            
-msg = bot.send_message(message.chat.id, 'Text')
-time.sleep(1)
-bot.edit_message_text(chat_id = message.chat.id, message_id = msg.message_id, text = 'Edited text')
-time.sleep(1)
-bot.edit_message_text(chat_id = message.chat.id, message_id = msg.message_id, text = 'Edited one more time')
-
-"""
+        chetchik2 = 0
