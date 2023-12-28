@@ -1,125 +1,173 @@
-from start import bot
 from telebot import types
 
-count = 0  # переменная для кол-ва участников
-chetchik = 1  # переменная , используемая для создания клавиатуры
-number_of_person = {1: {"color": None, "point": 0},  # словарь с данными участников
-                    2: {"color": None, "point": 0},
-                    3: {"color": None, "point": 0}}
-colors = []  # список с цветами
-game_ready = None  # флаг на начало игры
-now = 1  # переменная для определения номера того, кто ходит
-prew_now = 1  # переменная, используемая для добавления очков
-kbd2 = None  # клавиатура вторая для счёта очков
-now_playing = None
-chetchik2 = 0  # для передачи хода переменная
+from start import bot
+
+count_of_players = 0  # количество игроков
+player_chose_color = 1
+counter_of_players = None
+players_data = {1: {"color": None, "point": 0},  # словарь с данными участников
+                2: {"color": None, "point": 0},
+                3: {"color": None, "point": 0}}
+colors = ["Красный", "Оранжевый", "Жёлтый", "Зелёный", "Синий", "Белый", "Чёрный"]  # список цветов игры
+game_ready = False
+finish_flag = False
+counter = 1
+keyboard = None
+count_of_pushes = {}
 
 
-def keyboard(call, player):  # функция для создания клавиатуры с цветами
-    global kbd2
-    kbd = types.InlineKeyboardMarkup()
-    for keys in colors:
-        kbd.add(types.InlineKeyboardButton(text=keys, callback_data=keys))
-    # kbd2 = types.InlineKeyboardMarkup()
-    # for keys in colors:
-    #     kbd2.add(types.InlineKeyboardButton(text=keys, callback_data=str(keys) + "!"))
-    bot.send_message(call.message.chat.id, f"Игрок {player} - выберите цвет", reply_markup=kbd,
-                     parse_mode="html")
-
-
-def playing(message):
-    global number_of_person, colors, kbd, call, kbd2, now, now_playing, prew_now
-    bot.send_message(message.chat.id, f"Сейчас ход {number_of_person[now]['color']}игрока")
-    now_playing = number_of_person[now]['color']
-    prew_now = now
-    if now == count:
-        now = 0
-    now += 1
-    bot.send_message(message.chat.id, "Выберите тех, кто угадал", reply_markup=kbd2)
+def chose_color(colors_list, d):
+    colors_keyboard = types.InlineKeyboardMarkup()
+    for key in colors_list:
+        colors_keyboard.add(types.InlineKeyboardButton(text=key, callback_data=key + d))
+    return colors_keyboard
 
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    global colors, game_ready
-    bot.send_message(chat_id=message.chat.id, text="Приветик, маленький игрок\nДавай поиграем\nВо что будем играть?")
+    global count_of_players,player_chose_color,counter_of_players ,players_data,colors,game_ready,finish_flag,counter,keyboard,count_of_pushes
+    count_of_players = 0  # количество игроков
+    player_chose_color = 1
+    counter_of_players = None
+    players_data = {1: {"color": None, "point": 0},  # словарь с данными участников
+                    2: {"color": None, "point": 0},
+                    3: {"color": None, "point": 0}}
+    colors = ["Красный", "Оранжевый", "Жёлтый", "Зелёный", "Синий", "Белый", "Чёрный"]  # список цветов игры
+    game_ready = False
+    finish_flag = False
+    counter = 1
+    keyboard = None
+    count_of_pushes = {}
+    bot.send_message(chat_id=message.chat.id, text="*Приветик, маленький игрок*.\nДавай поиграем.\nВо что будем играть?",parse_mode="Markdown")
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(types.KeyboardButton("Имаджинариум"))
     bot.send_message(message.chat.id, text="Каков твой выбор?", reply_markup=markup)
-    # создание переменных для игры
-    colors = ["Красный", "Оранжевый", "Жёлтый", "Зелёный", "Синий", "Белый", "Чёрный"]
-    game_ready = False
 
 
 @bot.message_handler(content_types='text')
 def message_reply_numbers(message):  # функция для выбора кол-ва участников
-    global number_of_person, colors, kbd, call, kbd2, now, now_playing
-
     if message.text == "Имаджинариум":
         bot.send_message(chat_id=message.chat.id, text="Выбирай количество участников.")
         keyboard = types.InlineKeyboardMarkup(row_width=2)
-        markup30 = types.InlineKeyboardButton(text="3", callback_data="3")
-        markup40 = types.InlineKeyboardButton(text="4", callback_data="4")
-        markup50 = types.InlineKeyboardButton(text="5", callback_data="5")
-        markup60 = types.InlineKeyboardButton(text="6", callback_data="6")
-        markup70 = types.InlineKeyboardButton(text="7", callback_data="7")
-        keyboard.add(markup30, markup40, markup50, markup60, markup70)
+        for i in range(3, 8):
+            keyboard.add(types.InlineKeyboardButton(text=i, callback_data=str(i)))
         bot.send_message(message.chat.id, "Сделай свой выбор", reply_markup=keyboard)
 
-    elif message.text == "ИГРАТЬ" and game_ready:
-        playing(message)
-
-
+@bot.message_handler(content_types=['sticker'])
+def sticker(message):
+    stiker_id=message.sticker.file_id
+    print(stiker_id)
 @bot.callback_query_handler(func=lambda call: True)
-def calling_button(call):  # обработка кнопок
-    global number_of_person, count, chetchik, colors, game_ready, kbd2, chetchik2, prew_now
-
-    kbd = types.InlineKeyboardMarkup()
-    kbd.add(types.InlineKeyboardButton(text="Далее", callback_data="Далее"))
-
-    if call.data in ['3', '4', '5', '6', '7']:  # создание словаря с цветами
-        count = int(call.data)
-
-        for i in range(count - 3):
-            number_of_person[count] = {"color": None, "point": 0}
+def calling_button(call):
+    """
+    функция для обработки
+    :param call:
+    :return:
+    """
+    global count_of_players, player_chose_color, players_data, counter_of_players, finish_flag, keyboard, counter, count_of_pushes
+    if call.data in "345678":
+        count_of_players = int(call.data)
         bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
-                         reply_markup=kbd)
+                         reply_markup=chose_color(colors, "a"))
+        counter_of_players = count_of_players
+
+    elif call.data == 'finish':
+        bot.send_sticker(chat_id=call.message.chat.id,sticker='CAACAgIAAxkBAAIIDmVOdeALG7YDHnNuTmyFxMPca4oUAAJnAANlogMsURQqjKHC7BEzBA')
+        finish_flag = True
+        game2(players_data, call)
+        game(players_data, call)
+        bot.send_sticker(chat_id=call.message.chat.id,sticker='CAACAgIAAxkBAAIH_WVOdNzzcGdPFBN8FdNY9IJUjCPBAALiCAACbDtBKF15tvP7aUBoMwQ')
+        bot.send_sticker(chat_id=call.message.chat.id, sticker='CAACAgIAAxkBAAIH_mVOdOHWk_3ULzYpzB-jieETPR2KAALnCAACbDtBKD4BbMYzXur9MwQ')
+        bot.send_sticker(chat_id=call.message.chat.id, sticker='CAACAgIAAxkBAAIH_2VOdOXFgs6HISlqAAFDPi3kFkP2kAAC7AgAAmw7QShysmBUnDIVmzME')
+
+    elif '@' in call.data:
+        player = call.data[0]
+        players_data[int(player)]['point'] += 1
+
+    elif call.data=='start':
+        start(call.message)
+
+    elif '$' in call.data:
+
+        player = call.data[0]
+        if not count_of_pushes[player]:
+            players_data[int(player)]['point'] += 3
+            count_of_pushes[player] = True
+
+
+    elif call.data == 'next':
+        vedychi = counter - 1
+        if vedychi == -0:
+            vedychi = len(players_data)
+        print(sum(count_of_pushes.values()))
+        print(len(players_data))
+        if sum(count_of_pushes.values()) != len(players_data) - 1:
+            players_data[vedychi]['point'] += 3 * sum(count_of_pushes.values())
+
+        bot.send_sticker(chat_id=call.message.chat.id,sticker='CAACAgIAAxkBAAIIDmVOdeALG7YDHnNuTmyFxMPca4oUAAJnAANlogMsURQqjKHC7BEzBA')
+        game2(players_data, call)
+        game(players_data, call)
 
 
 
-    elif call.data == "Далее":  # кнопка далее
-        keyboard(call, "1")
 
-    elif call.data in colors and chetchik <= count:  # создание клавиатуры после кнопки далее, она меняется
-        number_of_person[chetchik]["color"] = call.data
-        chetchik += 1
-        colors.remove(call.data)
-        if chetchik <= count:
-            keyboard(call, chetchik)
-            print(call.data)
-            print(chetchik)
+
+
+    elif call.data[:-1] in colors:
+
+        counter_of_players -= 1
+        players_data[player_chose_color] = {"color": call.data[:-1], "point": 0}
+        colors.remove(call.data[:-1])
+        player_chose_color += 1
+        if counter_of_players > 0:
+
+            bot.send_message(chat_id=call.message.chat.id, text="Выбирай цвета, которые будут участвовать в игре.",
+                             reply_markup=chose_color(colors, "a"))
         else:
-            game_ready = True
-            bot.send_message(chat_id=call.message.chat.id, text="Цвета выбраны. НАПИШИТЕ 'ИГРАТЬ'")
-            kbd2 = types.InlineKeyboardMarkup()
-            for key, value in number_of_person.items():
-                kbd2.add(types.InlineKeyboardButton(text=value["color"],
-                                                    callback_data=str(value["color"]) + "!"))
-            kbd2.add(types.InlineKeyboardButton(text="Передать ход",
-                                                callback_data='next'))
+            bot.send_message(chat_id=call.message.chat.id, text="Цвета выбраны")
+            game2(players_data, call)
+            game(players_data,call)
+        print(players_data, counter_of_players, count_of_players)
 
 
-    elif call.data in ["Красный!", "Оранжевый!", "Жёлтый!", "Зелёный!", "Синий!", "Белый!",
-                       "Чёрный!"]:  # если угадали + нажатие +3 балла
-        try:
-            for key, value in number_of_person.items():
-                if value["color"] == call.data[:-1] and call.data[:-1] != number_of_person[now - 1]['color']:
-                    value["point"] += 3
-                    chetchik2 += 1
-            print(number_of_person)
-        except:
-            raise Exception("ПЕРЕДЕЛЫВАЙ!")
-    elif call.data == "next":
-        if 0 < chetchik2 < count - 1:
-            number_of_person[prew_now]["point"] += 3
-        playing(call.message)
-        chetchik2 = 0
+def game(data, call):
+    global finish_flag, player_chose_color, counter, keyboard, count_of_pushes
+
+    if finish_flag:
+        text = ""
+        for key, value in data.items():
+            text += f"{players_data[key]['color']}-{value['point']}\n"
+        keyboard = types.InlineKeyboardMarkup()
+        keyboard.add(types.InlineKeyboardButton(text='Заново', callback_data='start'))
+        bot.send_message(chat_id=call.message.chat.id, text=f'Спасибо за игру!\n{text}', reply_markup=keyboard)
+
+
+        return
+    else:
+        if counter > len(data):
+            counter = 1
+        keyboard_players = [i for i in data if i != counter]
+        keyboard = types.InlineKeyboardMarkup()
+        count_of_pushes = {}
+        for key in keyboard_players:
+            keyboard.add(types.InlineKeyboardButton(text=f"Игрок-{players_data[key]['color']}", callback_data=(str(key) + '$')))
+            count_of_pushes[str(key)] = False
+        keyboard.add(types.InlineKeyboardButton(text='Далее', callback_data='next'))
+        keyboard.add(types.InlineKeyboardButton(text="Конец игры", callback_data='finish'))
+        bot.send_message(chat_id=call.message.chat.id, text=f'ведущий-{counter}', reply_markup=keyboard)
+        counter += 1
+        return
+
+
+def game2(data, call):
+    global finish_flag, player_chose_color, counter, keyboard, count_of_pushes
+    if finish_flag:
+        pass
+    else:
+        keyboard_players = [i for i in data if i != counter]
+        keyboard = types.InlineKeyboardMarkup()
+        for key in keyboard_players:
+            keyboard.add(
+                types.InlineKeyboardButton(text=f"{players_data[key]['color']}", callback_data=(str(key) + '@')))
+        bot.send_message(chat_id=call.message.chat.id, text=f'Кого угадали', reply_markup=keyboard)
+
